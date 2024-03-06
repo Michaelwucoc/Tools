@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Student Selector</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+    }
+    #container {
+        text-align: center;
+        margin-top: 50px;
+    }
+    #button {
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+    #button:hover {
+        background-color: #45a049;
+    }
+    #studentNames {
+        width: 300px;
+        height: 150px;
+        font-size: 16px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        resize: none;
+    }
+    h1, h2, label {
+        color: black;
+    }
+    #result {
+        color: #4CAF50;
+        font-size: 24px;
+        margin-top: 20px;
+        animation: fadeIn 1s ease;
+    }
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    @keyframes randomDisplay {
+        0% {
+            color: grey;
+        }
+        25% {
+            color: black;
+        }
+        50% {
+            color: grey;
+        }
+        75% {
+            color: black;
+        }
+        100% {
+            color: grey;
+        }
+    }
+    .animateResult {
+        animation: randomDisplay 1s ease-in-out;
+    }
+    .hidden {
+        display: none;
+    }
+</style>
+</head>
+<body>
+
+<div id="container">
+    <h1>Random Student Selector</h1>
+    <label for="studentNames">Enter student names (separate with commas or line breaks):</label><br>
+    <textarea id="studentNames" placeholder="e.g., John, Mary, Jane"></textarea><br><br>
+    <button id="button" onclick="selectRandomStudent()">Select Student</button>
+    <h2 id="result"></h2>
+
+    <button id="advancedButton" onclick="toggleAdvancedSettings()">Advanced Settings</button>
+    <div id="advancedSettings" class="hidden">
+        <label for="animationDuration">Animation Duration (seconds):</label>
+        <input type="number" id="animationDuration" min="0.1" step="0.1" value="0.5"><br><br>
+        
+        <label for="fontColor">Font Color:</label>
+        <input type="color" id="fontColor" value="#4CAF50"><br><br>
+
+        <label for="backgroundColor">Background Color:</label>
+        <input type="color" id="backgroundColor" value="#ffffff"><br><br>
+        
+        <label for="boxColor">Box Color:</label>
+        <input type="color" id="boxColor" value="#ffffff"><br><br>
+
+        <label for="boxSize">Box Size:</label>
+        <input type="number" id="boxSize" min="50" value="300"><br><br>
+
+        <button onclick="applyEdits()">Apply Edits</button>
+        <button onclick="exportSettings()">Export Settings</button>
+        <button onclick="importSettings()">Import Settings</button>
+    </div>
+
+    <button onclick="toggleStudentDataSection()">Show Student Data Section</button>
+    <div id="studentDataSection" class="hidden">
+        <button onclick="saveStudents()">Save Students</button>
+        <input type="file" id="importStudentData" accept=".json" onchange="importStudents(event)">
+    </div>
+</div>
+
+<script>
+    var studentProbabilities = {};
+
+    // Function to select a random student
+    function selectRandomStudent() {
+        var studentNamesInput = document.getElementById("studentNames").value;
+        var students = studentNamesInput.split(/[,|\n]/).map(function(item) {
+            return item.trim();
+        }).filter(function(item) {
+            return item !== "";
+        });
+
+        if (students.length === 0) {
+            alert("Please enter at least one student name.");
+            return;
+        }
+
+        // Display "Selecting Student..." animation
+        document.getElementById("result").innerText = "Selecting Student...";
+        document.getElementById("result").classList.add("animateResult");
+
+        setTimeout(function() {
+            var randomIndex = getRandomIndex(students);
+            var selectedStudent = students[randomIndex];
+            document.getElementById("result").innerText = "Selected Student: " + selectedStudent;
+
+            // Store entered student names in a cookie
+            document.cookie = "studentNames=" + encodeURIComponent(studentNamesInput);
+
+            // Remove animation
+            document.getElementById("result").classList.remove("animateResult");
+        }, getAnimationDuration() * 1000);
+    }
+
+    // Function to toggle advanced settings visibility
+    function toggleAdvancedSettings() {
+        var advancedSettings = document.getElementById("advancedSettings");
+        advancedSettings.classList.toggle("hidden");
+    }
+
+    // Function to toggle student data section visibility
+    function toggleStudentDataSection() {
+        var studentDataSection = document.getElementById("studentDataSection");
+        studentDataSection.classList.toggle("hidden");
+    }
+
+    // Function to get animation duration from advanced settings
+    function getAnimationDuration() {
+        return parseFloat(document.getElementById("animationDuration").value);
+    }
+
+    // Function to get font color from advanced settings
+    function getFontColor() {
+        return document.getElementById("fontColor").value;
+    }
+
+    // Function to get background color from advanced settings
+    function getBackgroundColor() {
+        return document.getElementById("backgroundColor").value;
+    }
+
+    // Function to get box color from advanced settings
+    function getBoxColor() {
+        return document.getElementById("boxColor").value;
+    }
+
+    // Function to get box size from advanced settings
+    function getBoxSize() {
+        return document.getElementById("boxSize").value + "px";
+    }
+
+    // Function to apply edits from advanced settings
+    function applyEdits() {
+        var result = document.getElementById("result");
+        result.style.color = getFontColor();
+        document.body.style.backgroundColor = getBackgroundColor();
+        document.getElementById("studentNames").style.backgroundColor = getBoxColor();
+        document.getElementById("studentNames").style.width = getBoxSize();
+        document.getElementById("studentNames").style.height = getBoxSize();
+    }
+
+    // Function to retrieve a cookie value by name
+    function getCookie(name) {
+        var cookies = document.cookie.split(";");
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.startsWith(name + "=")) {
+                return decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        }
+        return null;
+    }
+
+    // Function to export settings
+    function exportSettings() {
+        var settings = {
+            animationDuration: getAnimationDuration(),
+            fontColor: getFontColor(),
+            backgroundColor: getBackgroundColor(),
+            boxColor: getBoxColor(),
+            boxSize: getBoxSize()
+        };
+        var settingsJson = JSON.stringify(settings);
+        console.log("Exported settings: ", settingsJson);
+        alert("Settings exported. See console for details.");
+    }
+
+    // Function to import settings
+    function importSettings() {
+        var settingsJson = prompt("Paste the exported settings JSON here:");
+        if (settingsJson) {
+            try {
+                var settings = JSON.parse(settingsJson);
+                document.getElementById("animationDuration").value = settings.animationDuration;
+                document.getElementById("fontColor").value = settings.fontColor;
+                document.getElementById("backgroundColor").value = settings.backgroundColor;
+                document.getElementById("boxColor").value = settings.boxColor;
+                document.getElementById("boxSize").value = parseInt(settings.boxSize);
+                alert("Settings imported successfully.");
+            } catch (error) {
+                alert("Invalid settings JSON.");
+            }
+        }
+    }
+
+    // Function to save students
+    function saveStudents() {
+        var studentData = document.getElementById("studentNames").value;
+        var blob = new Blob([studentData], { type: "application/json" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "students.json";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        alert("Students saved successfully.");
+    }
+
+    // Function to import students
+    function importStudents(event) {
+        var file = event.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var importedData = e.target.result;
+                document.getElementById("studentNames").value = importedData;
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    // Function to generate a random index based on probabilities
+    function getRandomIndex(students) {
+        var totalWeight = students.reduce(function(sum, student) {
+            return sum + (studentProbabilities[student] || 1);
+        }, 0);
+
+        var randomNumber = Math.random() * totalWeight;
+
+        for (var i = 0; i < students.length; i++) {
+            randomNumber -= studentProbabilities[students[i]] || 1;
+            if (randomNumber <= 0) {
+                return i;
+            }
+        }
+        return students.length - 1;
+    }
+
+    // Function to change the probability for a student
+    function changeProbability(student, probability) {
+        studentProbabilities[student] = probability;
+    }
+
+    // Expose changeProbability function to console
+    window.probe = {
+        change: changeProbability
+    };
+
+</script>
+
+</body>
+</html>
